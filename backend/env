@@ -1,0 +1,16 @@
+# Backend
+PORT=3001
+
+# Database
+DB_HOST=database
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=inventario_db
+
+# CORS (desde React en modo desarrollo)
+CORS_ORIGIN=http://localhost:3000
+
+# Redis (futuro uso o implementación extendida)
+REDIS_HOST=redis
+REDIS_PORT=6379
