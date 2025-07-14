@@ -1,52 +1,41 @@
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/axios";
+import useFetch from "../hooks/useFetch";
+import CategoryForm from "../components/common/CategoryForm";
+import LoadingMessage from "../components/ui/LoadingMessage";
+import PageTitle from "../components/ui/PageTitle";
 
 function EditCategoryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
-  useEffect(() => {
-    const fetchCategory = async () => {
-      try {
-        const res = await api.get(`/categories/${id}`);
-        reset(res.data);
-      } catch (error) {
-        toast.error("No se pudo cargar la categoría");
-      }
-    };
-    fetchCategory();
-  }, [id, reset]);
+  const { data: category, loading, error } = useFetch(`/categories/${id}`);
 
-  const onSubmit = async (data) => {
+  const handleUpdate = async (data) => {
     try {
       await api.put(`/categories/${id}`, data);
-      toast.success("Categoría actualizada");
+      toast.success("Categoría actualizada correctamente");
       navigate("/categorias");
     } catch (error) {
-      toast.error("Error al actualizar categoría");
+      const res = error.response;
+      if (res?.status === 400 && Array.isArray(res.data.errors)) {
+        res.data.errors.forEach((err) => toast.error(err.msg));
+      } else {
+        toast.error("No se pudo actualizar la categoría");
+      }
     }
   };
 
+  if (loading) return <LoadingMessage text="Cargando categoría..." />;
+  if (error) return <p className="text-red-600 text-center">Error al cargar la categoría</p>;
+  if (!category) return null;
+
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Editar Categoría</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block mb-1">Nombre</label>
-          <input
-            {...register("name", { required: "Campo obligatorio" })}
-            className="w-full border p-2 rounded"
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-        </div>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-          Guardar Cambios
-        </button>
-      </form>
+    <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow">
+      <PageTitle>Editar Categoría</PageTitle>
+      <CategoryForm onSubmit={handleUpdate} defaultValues={category} title="" />
     </div>
   );
 }

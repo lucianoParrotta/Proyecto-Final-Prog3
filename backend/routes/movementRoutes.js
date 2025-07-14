@@ -1,11 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const movementController = require('../controllers/movementController');
 
-// Rutas CRUD
-router.get('/', movementController.getAll);
-router.get('/:id', movementController.getById);
-router.post('/', movementController.create);
-router.delete('/:id', movementController.delete);
+const {
+  getAll,
+  getById,
+  create,
+  delete: deleteMovement
+} = require("../controllers/movementController");
+
+const { validateMovement } = require("../middleware/validateMovement");
+const handleValidation = require("../middleware/handleValidation");
+const authenticateToken = require("../middleware/authMiddleware");
+
+router.get("/", authenticateToken, getAll);
+router.get("/:id", authenticateToken, getById);
+router.post("/", authenticateToken, validateMovement, handleValidation, create);
+router.delete("/:id", authenticateToken, deleteMovement);
 
 module.exports = router;

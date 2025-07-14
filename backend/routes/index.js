@@ -5,6 +5,8 @@ const router = express.Router();
 const productRoutes = require('./productRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const movementRoutes = require('./movementRoutes');
+const authRoutes = require("./authRoutes");
+
 
 // Ruta de prueba para ver que el API está vivo
 router.get('/health', (req, res) => {
@@ -15,7 +17,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Aquí montás cada grupo de rutas bajo su prefijo
 // Productos /api/products
 router.use('/products', productRoutes);
 
@@ -24,5 +25,9 @@ router.use('/categories', categoryRoutes);
 
 // Movimientos
 router.use('/movements', movementRoutes);
+
+// Usuario
+router.use("/auth", authRoutes);
+
 
 module.exports = router;

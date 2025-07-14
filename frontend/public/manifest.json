@@ -1,0 +1,9 @@
+{
+  "short_name": "InventarioApp",
+  "name": "Sistema de Inventario Full Stack",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff"
+}
+

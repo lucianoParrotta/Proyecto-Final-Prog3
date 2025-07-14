@@ -1,19 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const productController = require('../controllers/productController');
+const {
+  getAll,
+  create,
+  update,
+  delete: deleteProduct,
+  getById
+} = require("../controllers/productController");
 
-//test (borrar)
-router.get('/test', (req, res) => {
-  res.json({ message: 'Ruta /api/products/test funciona' });
-});
+const { validateProduct } = require("../middleware/validateProduct");
+const handleValidation = require("../middleware/handleValidation");
+const authenticateToken = require("../middleware/authMiddleware");
 
-
-
-// Endpoints CRUD
-router.get('/', productController.getAll);
-router.get('/:id', productController.getById);
-router.post('/', productController.create);
-router.put('/:id', productController.update);
-router.delete('/:id', productController.delete);
+router.get("/", authenticateToken, getAll);
+router.get("/:id", authenticateToken, getById);
+router.post("/", authenticateToken, validateProduct, handleValidation, create);
+router.put("/:id", authenticateToken, validateProduct, handleValidation, update);
+router.delete("/:id", authenticateToken, deleteProduct);
 
 module.exports = router;

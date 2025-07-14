@@ -119,39 +119,10 @@
       text-align: center;
       font-weight: 500;
     }
-
-    /* Estilos para desarrollo */
-    .development-banner {
-      background: linear-gradient(90deg, #ff6b6b, #ee5a24);
-      color: white;
-      text-align: center;
-      padding: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10000;
-      display: none;
-    }
-
-    /* Show development banner only in development */
-    body[data-env="development"] .development-banner {
-      display: block;
-    }
-
-    body[data-env="development"] #root {
-      margin-top: 32px;
-    }
   </style>
 </head>
 
 <body data-env="%NODE_ENV%">
-  <!-- Banner de desarrollo -->
-  <div class="development-banner">
-    🚧 MODO DESARROLLO - Esta aplicación está en desarrollo local
-  </div>
 
   <!-- Mensaje para usuarios sin JavaScript -->
   <noscript>
@@ -229,21 +200,6 @@
     
     Happy coding! 🎉
     `);
-  </script>
-
-  <!-- Service Worker para PWA (opcional) -->
-  <script>
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('%PUBLIC_URL%/sw.js')
-          .then((registration) => {
-            console.log('SW registered: ', registration);
-          })
-          .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-          });
-      });
-    }
   </script>
 </body>
 </html>

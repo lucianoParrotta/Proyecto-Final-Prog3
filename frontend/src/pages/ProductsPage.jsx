@@ -2,59 +2,50 @@ import React, { useEffect, useState } from "react";
 import api from "../services/axios";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import useFetch from "../hooks/useFetch";
+import PageTitle from "../components/ui/PageTitle";
+import ConfirmDialog from "../components/common/ConfirmDialog";
+import Button from "../components/ui/Button";
 
 function ProductsPage() {
-  const [products, setProducts] = useState([]);
+  const { data: products, loading, error } = useFetch("/products");
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
 
-    // Cargar productos al inicio
-    useEffect(() => {
-        const fetchProducts = async () => {
-        try {
-            const res = await api.get("/products");
-            setProducts(res.data);
-            setFiltered(res.data); // también inicializamos el filtrado
-        } catch (error) {
-            console.error("Error al obtener productos:", error);
-        } finally {
-            setLoading(false);
-        }
-        };
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
-        fetchProducts();
-    }, []);
+  useEffect(() => {
+    if (!products) return;
+    const term = search.toLowerCase();
+    const filteredList = products.filter((p) =>
+      p.name.toLowerCase().includes(term)
+    );
+    setFiltered(filteredList);
+  }, [search, products]);
 
-  // Filtrar productos cuando cambia el search o la lista
-    useEffect(() => {
-        const term = search.toLowerCase();
-        const filteredList = products.filter((p) =>
-        p.name.toLowerCase().includes(term)
-        );
-        setFiltered(filteredList);
-    }, [search, products]);
+  const handleDeleteRequest = (id) => {
+    setDeleteId(id);
+    setShowConfirm(true);
+  };
 
-    const handleDelete = async (id) => {
-    const confirm = window.confirm("¿Estás seguro que deseas eliminar este producto?");
-    if (!confirm) return;
-
+  const confirmDelete = async () => {
     try {
-        await api.delete(`/products/${id}`);
-        toast.success("Producto eliminado");
-        setProducts((prev) => prev.filter((p) => p.id !== id));
+      await api.delete(`/products/${deleteId}`);
+      toast.success("Producto eliminado");
+      setFiltered((prev) => prev.filter((p) => p.id !== deleteId));
     } catch (error) {
-        console.error("Error al eliminar producto:", error);
-        toast.error("No se pudo eliminar");
+      toast.error("No se pudo eliminar");
+    } finally {
+      setShowConfirm(false);
+      setDeleteId(null);
     }
-    };
-
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-6">Productos</h1>
+      <PageTitle>Productos</PageTitle>
 
-      {/* Input de búsqueda */}
       <div className="mb-4">
         <input
           type="text"
@@ -65,7 +56,6 @@ function ProductsPage() {
         />
       </div>
 
-      {/* Tabla de productos */}
       {loading ? (
         <p>Cargando productos...</p>
       ) : filtered.length === 0 ? (
@@ -92,25 +82,29 @@ function ProductsPage() {
                 </td>
                 <td className="px-4 py-2 border">${p.price}</td>
                 <td className="px-4 py-2 border">{p.stock}</td>
-                <td className="px-4 py-2 border">
-                <Link
+                <td className="px-4 py-2 border space-x-2">
+                  <Link
                     to={`/editar-producto/${p.id}`}
                     className="text-sm text-blue-600 hover:underline"
-                >
+                  >
                     Editar
-                </Link>
-                <button
-                    onClick={() => handleDelete(p.id)}
-                    className="text-sm text-red-600 hover:underline"
-                >
+                  </Link>
+                  <Button variant="danger" onClick={() => handleDeleteRequest(p.id)}>
                     Eliminar
-                </button>
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowConfirm(false)}
+        message="¿Estás seguro que deseas eliminar este producto?"
+      />
     </div>
   );
 }

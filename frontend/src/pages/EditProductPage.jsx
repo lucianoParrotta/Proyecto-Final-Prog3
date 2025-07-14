@@ -1,103 +1,43 @@
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import api from "../services/axios";
-import { useNavigate, useParams } from "react-router-dom";
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../services/axios";
+import ProductForm from "../components/common/ProductForm";
+import useFetch from "../hooks/useFetch";
+import LoadingMessage from "../components/ui/LoadingMessage";
+import PageTitle from "../components/ui/PageTitle";
 
 function EditProductPage() {
   const { id } = useParams();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
 
-  // Obtener el producto existente
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [prodRes, catRes] = await Promise.all([
-          api.get(`/products/${id}`),
-          api.get("/categories")
-        ]);
-        reset(prodRes.data); // precarga el form
-        setCategories(catRes.data);
-      } catch (error) {
-        console.error("Error al cargar datos", error);
-        toast.error("Error al cargar producto");
-      }
-    };
-    fetchData();
-  }, [id, reset]);
+  const { data: product, loading, error } = useFetch(`/products/${id}`);
 
-  const onSubmit = async (data) => {
+  const handleUpdate = async (data) => {
     try {
       data.price = parseFloat(data.price);
       data.stock = parseInt(data.stock, 10);
       await api.put(`/products/${id}`, data);
-      toast.success("Producto actualizado");
+      toast.success("Producto actualizado correctamente");
       navigate("/productos");
     } catch (error) {
-      console.error("Error al actualizar producto:", error);
-      toast.error("Error al actualizar producto");
+      const res = error.response;
+      if (res?.status === 400 && Array.isArray(res.data.errors)) {
+        res.data.errors.forEach((err) => toast.error(err.msg));
+      } else {
+        toast.error("No se pudo actualizar el producto");
+      }
     }
   };
 
+  if (loading) return <LoadingMessage text="Cargando producto..." />;
+  if (error) return <p className="text-red-600 text-center">Error al cargar el producto</p>;
+  if (!product) return null;
+
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white shadow rounded">
-      <h1 className="text-2xl font-bold mb-4">Editar Producto</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block mb-1">Nombre</label>
-          <input
-            {...register("name", { required: "Campo obligatorio" })}
-            className="w-full border p-2 rounded"
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-        </div>
-        <div>
-          <label className="block mb-1">Descripción</label>
-          <textarea
-            {...register("description")}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Precio</label>
-          <input
-            type="number"
-            step="0.01"
-            {...register("price", { required: "Campo obligatorio" })}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Stock</label>
-          <input
-            type="number"
-            {...register("stock", { required: "Campo obligatorio" })}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Categoría</label>
-          <select
-            {...register("categoryId", { required: "Seleccione categoría" })}
-            className="w-full border p-2 rounded"
-          >
-            <option value="">-- Seleccionar --</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Guardar Cambios
-        </button>
-      </form>
+    <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow">
+      <PageTitle>Editar Producto</PageTitle>
+      <ProductForm onSubmit={handleUpdate} defaultValues={product} title="" />
     </div>
   );
 }

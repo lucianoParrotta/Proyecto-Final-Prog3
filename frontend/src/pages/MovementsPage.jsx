@@ -1,31 +1,18 @@
-import React, { useEffect, useState } from "react";
-import api from "../services/axios";
+import React from "react";
+import useFetch from "../hooks/useFetch";
+import PageTitle from "../components/ui/PageTitle";
 
 function MovementsPage() {
-  const [movements, setMovements] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMovements = async () => {
-      try {
-        const res = await api.get("/movements");
-        setMovements(res.data);
-      } catch (error) {
-        console.error("Error al obtener movimientos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMovements();
-  }, []);
+  const { data: movements, loading, error } = useFetch("/movements");
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded">
-      <h1 className="text-2xl font-bold mb-6">Movimientos de Inventario</h1>
+    <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow">
+      <PageTitle>Movimientos de Inventario</PageTitle>
 
       {loading ? (
         <p>Cargando movimientos...</p>
+      ) : error ? (
+        <p className="text-red-600">Error al cargar movimientos.</p>
       ) : movements.length === 0 ? (
         <p>No hay movimientos registrados.</p>
       ) : (
@@ -34,7 +21,6 @@ function MovementsPage() {
             <tr>
               <th className="px-4 py-3 border">ID</th>
               <th className="px-4 py-3 border">Producto</th>
-              <th className="px-4 py-3 border">Tipo</th>
               <th className="px-4 py-3 border">Cantidad</th>
               <th className="px-4 py-3 border">Fecha</th>
             </tr>
@@ -43,12 +29,11 @@ function MovementsPage() {
             {movements.map((m) => (
               <tr key={m.id} className="hover:bg-gray-50 transition">
                 <td className="px-4 py-2 border">{m.id}</td>
-                <td className="px-4 py-2 border">{m.product?.name ?? "Sin producto"}</td>
-                <td className={`px-4 py-2 border font-semibold ${m.type === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
-                  {m.type}
-                </td>
+                <td className="px-4 py-2 border">{m.product?.name || "Sin producto"}</td>
                 <td className="px-4 py-2 border">{m.quantity}</td>
-                <td className="px-4 py-2 border">{new Date(m.date).toLocaleDateString()}</td>
+                <td className="px-4 py-2 border">
+                  {new Date(m.createdAt).toLocaleDateString()}
+                </td>
               </tr>
             ))}
           </tbody>

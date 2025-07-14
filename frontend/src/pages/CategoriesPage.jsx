@@ -1,48 +1,66 @@
 import React, { useEffect, useState } from "react";
-import api from "../services/axios";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../services/axios";
+import useFetch from "../hooks/useFetch";
+import PageTitle from "../components/ui/PageTitle";
+import Button from "../components/ui/Button";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 
 function CategoriesPage() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories, loading } = useFetch("/categories");
+
+  const [filtered, setFiltered] = useState([]);
+  const [search, setSearch] = useState("");
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await api.get("/categories");
-        setCategories(res.data);
-      } catch (error) {
-        console.error("Error al obtener categorías:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!categories) return;
+    const term = search.toLowerCase();
+    const filteredList = categories.filter((c) =>
+      c.name.toLowerCase().includes(term)
+    );
+    setFiltered(filteredList);
+  }, [search, categories]);
 
-    fetchCategories();
-  }, []);
+  const handleDeleteRequest = (id) => {
+    setDeleteId(id);
+    setShowConfirm(true);
+  };
 
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("¿Eliminar esta categoría?");
-    if (!confirm) return;
-
+  const confirmDelete = async () => {
     try {
-      await api.delete(`/categories/${id}`);
+      await api.delete(`/categories/${deleteId}`);
       toast.success("Categoría eliminada");
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      setFiltered((prev) => prev.filter((c) => c.id !== deleteId));
     } catch (error) {
-      toast.error("No se pudo eliminar. ¿Tiene productos asociados?");
+      toast.error("No se pudo eliminar la categoría");
+    } finally {
+      setShowConfirm(false);
+      setDeleteId(null);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow rounded">
-      <h1 className="text-2xl font-bold mb-6">Categorías</h1>
+    <div className="max-w-6xl mx-auto p-6 bg-white rounded shadow">
+      <PageTitle>Categorías</PageTitle>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Buscar categoría por nombre..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full border px-4 py-2 rounded shadow-sm"
+        />
+      </div>
 
       {loading ? (
         <p>Cargando categorías...</p>
-      ) : categories.length === 0 ? (
-        <p>No hay categorías registradas.</p>
+      ) : filtered.length === 0 ? (
+        <p>No hay categorías que coincidan.</p>
       ) : (
         <table className="w-full text-sm text-left border-collapse bg-white rounded shadow overflow-hidden">
           <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
@@ -53,7 +71,7 @@ function CategoriesPage() {
             </tr>
           </thead>
           <tbody>
-            {categories.map((c) => (
+            {filtered.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50 transition">
                 <td className="px-4 py-2 border">{c.id}</td>
                 <td className="px-4 py-2 border">{c.name}</td>
@@ -64,18 +82,22 @@ function CategoriesPage() {
                   >
                     Editar
                   </Link>
-                  <button
-                    onClick={() => handleDelete(c.id)}
-                    className="text-sm text-red-600 hover:underline"
-                  >
+                  <Button variant="danger" onClick={() => handleDeleteRequest(c.id)}>
                     Eliminar
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowConfirm(false)}
+        message="¿Estás seguro que deseas eliminar esta categoría?"
+      />
     </div>
   );
 }
